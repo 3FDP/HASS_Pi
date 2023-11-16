@@ -26,6 +26,10 @@
           - wget
         state: present
 
+    - name: Check if docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_installed
+      ignore_errors: true
     - name: Install Docker CE
       ansible.builtin.shell:
         cmd: curl -fsSL get.docker.com | sh
