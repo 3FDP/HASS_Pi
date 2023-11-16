@@ -92,6 +92,8 @@
         url: https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
         dest: /tmp/homeassistant-supervised.deb
         
+        mode: "0755"
+
     - name: Install .deb package
       ansible.builtin.apt:
         deb: /tmp/homeassistant-supervised.deb
