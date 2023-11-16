@@ -98,6 +98,11 @@
       ansible.builtin.apt:
         deb: /tmp/homeassistant-supervised.deb
 
+    - name: Remove tmp folder
+      ansible.builtin.file:
+        path: /tmp
+        state: absent
+      changed_when: true
 - name: Deploy docker-compose
   hosts: all
   become: true
