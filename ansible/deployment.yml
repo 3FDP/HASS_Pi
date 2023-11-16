@@ -26,41 +26,50 @@
           - wget
         state: present
 
+    - name: Retrieve Docker install script
+      ansible.builtin.get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
+        mode: '0755'
+
     - name: Install Docker CE
       ansible.builtin.shell:
-        cmd: curl -fsSL get.docker.com | sh
-        changed_when: true
-        args:
-          executable: /bin/bash
+        cmd: /tmp/get-docker.sh
+        executable: /bin/bash
+      register: result
+      changed_when: "'Docker is already the newest version' not in result.stdout"
 
-    - name: Add each host's user to the Docker group
+    - name: Add users to the Docker group
       ansible.builtin.user:
         name: "{{ ansible_user_id }}"
         groups: docker
-        append: yes
+        append: true
 
     - name: Download latest OS Agent GitHub release (arm64)
       ansible.builtin.get_url:
         url: "https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_{{ lookup('url', 'https://api.github.com/repos/home-assistant/os-agent/releases/latest', wantlist=True)[0].json.tag_name }}_linux_arm64.deb"
         dest: "/tmp/os-agent_latest_arm64.deb"
-        mode: '0644'
+        mode: '0755'
 
     - name: Install downloaded OS Agent package
       ansible.builtin.apt:
         deb: "/tmp/os-agent_latest_arm64.deb"
 
-    - name: Remove tmp folder
-      ansible.builtin.shell: rm -rf /tmp
-      changed_when: true
-
     - name: Install Home Assistant Supervisor Debian package
       ansible.builtin.get_url:
         url: https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
         dest: /tmp/homeassistant-supervised.deb
-        
+        mode: '0755'
+
     - name: Install .deb package
       ansible.builtin.apt:
         deb: /tmp/homeassistant-supervised.deb
+
+    - name: Remove tmp folder
+      ansible.builtin.file:
+        path: /tmp
+        state: absent
+      changed_when: true
 
 - name: Deploy docker-compose
   hosts: all
@@ -85,16 +94,16 @@
       ansible.builtin.copy:
         src: ../server/docker-compose.yml
         dest: /home/server/docker-compose.yml
-        mode: '0644'
+        mode: '0755'
 
     - name: Copy over .env file
       ansible.builtin.copy:
         src: ../server/.env
         dest: /home/server/.env
-        mode: '0644'
+        mode: '0755'
 
     - name: Run docker-compose
-      ansible.builtin.shell: docker-compose up -d
-      args:
+      ansible.builtin.command:
+        cmd: docker-compose up -d
         chdir: /home/server
       changed_when: true
