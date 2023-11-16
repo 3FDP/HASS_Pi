@@ -52,20 +52,40 @@
         groups: docker
         append: true
 
+    - name: Install required Python libraries
+      ansible.builtin.pip:
+        name: github3.py
+        extra_args: --user
+
+    - name: Find current release tag for OS Agent
+      community.general.github_release:
+        user: home-assistant
+        repo: os-agent
+        action: latest_release
+      register: release_data
 
     - name: Download latest OS Agent GitHub release (arm64)
       ansible.builtin.get_url:
-        url: "https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_{{ lookup('url', 'https://api.github.com/repos/home-assistant/os-agent/releases/latest', wantlist=True)[0].json.tag_name }}_linux_arm64.deb"
-        dest: "/tmp/os-agent_latest_arm64.deb"
-        mode: '0644'
+        url: "https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_{{ release_data.tag }}_linux_arm64.tar.gz"
+        dest: "/tmp/os-agent_latest_arm64.tar.gz"
+        mode: "0755"
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /tmp/os-agent_latest_arm64
+        state: directory
+        mode: "0755"
+
+    - name: Extract tgz file
+      ansible.builtin.unarchive:
+        src: /tmp/os-agent_latest_arm64.tar.gz
+        dest: /tmp/os-agent_latest_arm64/
+        remote_src: true
 
     - name: Install downloaded OS Agent package
-      ansible.builtin.apt:
-        deb: "/tmp/os-agent_latest_arm64.deb"
-
-    - name: Remove tmp folder
-      ansible.builtin.shell: rm -rf /tmp
-      changed_when: true
+      ansible.builtin.shell:
+        chdir: /tmp/os-agent_latest_arm64
+        cmd: ./os-agent
 
     - name: Install Home Assistant Supervisor Debian package
       ansible.builtin.get_url:
