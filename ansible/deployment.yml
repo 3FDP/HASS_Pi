@@ -1,16 +1,15 @@
----
 - name: Home Assistant deployment
   hosts: all
   become: true
 
   tasks:
     - name: Update system packages
-      apt:
-        update_cache: yes
-        upgrade: yes
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: true
 
     - name: Install Home Assistant dependencies
-      apt:
+      ansible.builtin.apt:
         name:
           - apparmor
           - cifs-utils
@@ -28,53 +27,54 @@
         state: present
 
     - name: Install Docker CE
-      shell: curl -fsSL get.docker.com | sh
-
-    # - name: Add each host's user to the Docker group
-    #   user:
-    #     name: "{{ hostvars[inventory_hostname]['user'] }}"
-    #     groups: docker
-    #     append: yes
-    #   # loop: "{{ groups['all'] }}"
-    #   when: 'user' in hostvars[inventory_hostname]
+      ansible.builtin.shell:
+        cmd: curl -fsSL get.docker.com | sh
+        changed_when: true
+        args:
+          executable: /bin/bash
 
     - name: Add each host's user to the Docker group
-      user:
+      ansible.builtin.user:
         name: "{{ ansible_user_id }}"
         groups: docker
         append: yes
 
     - name: Download latest OS Agent GitHub release (arm64)
-      get_url:
+      ansible.builtin.get_url:
         url: "https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_{{ lookup('url', 'https://api.github.com/repos/home-assistant/os-agent/releases/latest', wantlist=True)[0].json.tag_name }}_linux_arm64.deb"
         dest: "/tmp/os-agent_latest_arm64.deb"
+        mode: '0644'
 
     - name: Install downloaded OS Agent package
-      apt:
+      ansible.builtin.apt:
         deb: "/tmp/os-agent_latest_arm64.deb"
 
     - name: Remove tmp folder
-      shell: rm -rf /tmp
+      ansible.builtin.shell: rm -rf /tmp
+      changed_when: true
 
     - name: Install Home Assistant Supervisor Debian package
-      shell:
-        cmd: |
-          wget -O /tmp/homeassistant-supervised.deb https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
-          apt install /tmp/homeassistant-supervised.deb
+      ansible.builtin.get_url:
+        url: https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
+        dest: /tmp/homeassistant-supervised.deb
+        
+    - name: Install .deb package
+      ansible.builtin.apt:
+        deb: /tmp/homeassistant-supervised.deb
 
-- name: docker-compose deployment
+- name: Deploy docker-compose
   hosts: all
   become: true
 
   tasks:
     - name: Install docker-compose
-      apt:
+      ansible.builtin.apt:
         name:
           - docker-compose
         state: present
 
     - name: Create server directory
-      file:
+      ansible.builtin.file:
         path: /home/server
         state: directory
         owner: "{{ ansible_user_id }}"
@@ -82,15 +82,19 @@
         mode: '0755'
 
     - name: Copy over docker-compose.yml
-      copy:
+      ansible.builtin.copy:
         src: ../server/docker-compose.yml
         dest: /home/server/docker-compose.yml
+        mode: '0644'
 
     - name: Copy over .env file
-      copy:
+      ansible.builtin.copy:
         src: ../server/.env
         dest: /home/server/.env
-    
-    - name: docker-compose up
-      shell: docker-compose up -d
-          
+        mode: '0644'
+
+    - name: Run docker-compose
+      ansible.builtin.shell: docker-compose up -d
+      args:
+        chdir: /home/server
+      changed_when: true
