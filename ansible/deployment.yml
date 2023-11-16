@@ -30,18 +30,28 @@
       ansible.builtin.command: docker --version
       register: docker_installed
       ignore_errors: true
+
+    - name: Retrieve Docker install script
+      ansible.builtin.get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
+        mode: "0755"
+      when: docker_installed.failed
+
     - name: Install Docker CE
       ansible.builtin.shell:
-        cmd: curl -fsSL get.docker.com | sh
-        changed_when: true
-        args:
-          executable: /bin/bash
+        cmd: /tmp/get-docker.sh
+        executable: /bin/bash
+      register: result
+      changed_when: "'Docker is already the newest version' not in result.stdout"
+      when: docker_installed.failed
 
-    - name: Add each host's user to the Docker group
+    - name: Add users to the Docker group
       ansible.builtin.user:
         name: "{{ ansible_user_id }}"
         groups: docker
-        append: yes
+        append: true
+
 
     - name: Download latest OS Agent GitHub release (arm64)
       ansible.builtin.get_url:
