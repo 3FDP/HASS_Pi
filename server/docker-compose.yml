@@ -1,0 +1,42 @@
+services:
+  # Container manager
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:Z
+      - ${CONFIG_DIR}/portainer:/data:Z
+    ports:
+      - "${PORTAINER_PORT}:9000"
+    restart: unless-stopped
+  
+  # Self-hosted VPN server 
+  wireguard:
+    image: linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+      - SERVERURL=auto #optional
+      - SERVERPORT=${WIREGUARD_PORT} #optional
+      - PEERS=3 #optional
+      - PEERDNS=auto #optional
+      - INTERNAL_SUBNET=10.13.13.0 #optional
+      - ALLOWEDIPS=0.0.0.0/0 #optional
+      - LOG_CONFS=true #optional
+    volumes:
+      - ${CONFIG_DIR}/wireguard:/config
+      - ${CONFIG_DIR}/wireguard/lib/modules:/lib/modules
+    ports:
+      - ${WIREGUARD_PORT}:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
