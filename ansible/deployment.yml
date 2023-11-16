@@ -91,7 +91,6 @@
       ansible.builtin.get_url:
         url: https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
         dest: /tmp/homeassistant-supervised.deb
-        
         mode: "0755"
 
     - name: Install .deb package
@@ -103,6 +102,7 @@
         path: /tmp
         state: absent
       changed_when: true
+
 - name: Deploy docker-compose
   hosts: all
   become: true
@@ -120,22 +120,22 @@
         state: directory
         owner: "{{ ansible_user_id }}"
         group: docker
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy over docker-compose.yml
       ansible.builtin.copy:
         src: ../server/docker-compose.yml
         dest: /home/server/docker-compose.yml
-        mode: '0644'
+        mode: "0755"
 
     - name: Copy over .env file
       ansible.builtin.copy:
         src: ../server/.env
         dest: /home/server/.env
-        mode: '0644'
+        mode: "0755"
 
     - name: Run docker-compose
-      ansible.builtin.shell: docker-compose up -d
-      args:
+      ansible.builtin.command:
+        cmd: docker-compose up -d
         chdir: /home/server
       changed_when: true
