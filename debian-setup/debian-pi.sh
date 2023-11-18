@@ -95,3 +95,7 @@ reboot
 EOF
 
 chmod +x $mount_point/setup.sh
+
+# Cleanup
+umount $mount_point
+echo "Script completed successfully."
