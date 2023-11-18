@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Script: debian-pi.sh
-# Usage: debian-pi.sh -img <debian_image_file> -media <media_path> [-hostname <hostname>] -user <username> -pass <password>
+# Usage: debian-pi.sh -img <debian_image_file> -device <device_path> [-hostname <hostname>] -user <username> -pass <password>
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 -img <debian_image_file> -media <media_path> [-hostname <hostname>] -user <username> -pass <password>"
+    echo "Usage: $0 -img <debian_image_file> -device <device_path> [-hostname <hostname>] -user <username> -pass <password>"
     exit 1
 }
 
@@ -13,7 +13,7 @@ usage() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -img) img="$2"; shift ;;
-        -media) media="$2"; shift ;;
+        -device) device="$2"; shift ;;
         -hostname) hostname="$2"; shift ;;
         -user) new_user="$2"; shift ;;
         -pass) new_pass="$2"; shift ;;
@@ -23,7 +23,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if mandatory arguments are set
-if [ -z "$img" ] || [ -z "$media" ] || [ -z "$new_user" ] || [ -z "$new_pass" ]; then
+if [ -z "$img" ] || [ -z "$device" ] || [ -z "$new_user" ] || [ -z "$new_pass" ]; then
     usage
 fi
 
@@ -33,15 +33,18 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Step 1: Install the image
-echo "Installing $img to $media..."
-dd if="$img" of="$media" bs=4M conv=fsync
+# Step 1: Install the image to the device
+echo "Installing $img to $device..."
+dd if="$img" of="$device" bs=4M conv=fsync status=progress
 echo "Installation complete."
 
-# Mount the media to edit files
+# Assuming the first partition is the bootable system partition
+partition="${device}1"
+
+# Mount the partition to edit files
 mount_point="/mnt/debian_pi"
 mkdir -p $mount_point
-mount ${media}1 $mount_point
+mount $partition $mount_point
 
 # Step 2: Edit /etc/ssh/sshd_config
 echo "Configuring SSH to allow root login..."
