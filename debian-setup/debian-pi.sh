@@ -38,8 +38,39 @@ echo "Installing $img to $device..."
 dd if="$img" of="$device" bs=4M conv=fsync status=progress
 echo "Installation complete."
 
-# Assuming the first partition is the bootable system partition
-partition="${device}1"
+# Function to find the bootable system partition
+find_system_partition() {
+    local device="$1"
+    for partition in \${device}*; do
+        mkdir -p /mnt/temp_partition
+        mount \$partition /mnt/temp_partition 2>/dev/null
+
+        # Check for system directories
+        if [ -d /mnt/temp_partition/etc ] && [ -d /mnt/temp_partition/boot ] && \
+           [ -d /mnt/temp_partition/home ] && [ -d /mnt/temp_partition/mnt ] && \
+           [ -d /mnt/temp_partition/media ]; then
+            umount /mnt/temp_partition
+            rmdir /mnt/temp_partition
+            echo \$partition
+            return
+        fi
+
+        umount /mnt/temp_partition 2>/dev/null
+        rmdir /mnt/temp_partition
+    done
+
+    echo "No system partition found" >&2
+    exit 1
+}
+
+# Find the bootable system partition
+partition=$(find_system_partition $device)
+if [ -z "$partition" ]; then
+    echo "Unable to find a valid system partition on $device"
+    exit 1
+fi
+
+echo "Using system partition: $partition"
 
 # Mount the partition to edit files
 mount_point="/mnt/debian_pi"
