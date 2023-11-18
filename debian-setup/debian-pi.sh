@@ -66,7 +66,7 @@ if [ ! -z "$hostname" ]; then
     echo "127.0.0.1    $hostname" >> $mount_point/etc/hosts
 fi
 
-# Step 6: Create setup.sh script in the media's root directory
+# Step 6: Create setup.sh script in the device's root directory
 echo "Creating setup.sh script..."
 cat <<EOF > $mount_point/setup.sh
 #!/bin/bash
@@ -77,7 +77,14 @@ cat <<EOF > $mount_point/setup.sh
 apt update
 
 # Install necessary software
-apt install -y sudo python3 pip systemd-resolver
+apt install -y sudo python3 systemd-resolver
+
+# Check Python version and remove the EXTERNALLY-MANAGED file for that version
+python_version=\$(python3 --version | grep -oP '(?<=Python )\d+\.\d+')
+python_rm="/usr/lib/python\$python_version/EXTERNALLY-MANAGED"
+if [ -f "\$python_rm" ]; then
+    sudo rm "\$python_rm"
+fi
 
 # Create a new user
 useradd -m -s /bin/bash $new_user
@@ -95,7 +102,4 @@ reboot
 EOF
 
 chmod +x $mount_point/setup.sh
-
-# Cleanup
-umount $mount_point
 echo "Script completed successfully."
