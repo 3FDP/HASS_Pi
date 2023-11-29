@@ -141,5 +141,22 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 reboot
 EOF
 
+# Step 7: Create a first-boot script to restart SSH
+echo "Creating first-boot script to restart SSH service..."
+cat <<EOF > $mount_point/first-boot.sh
+#!/bin/bash
+
+# Restart SSH service
+systemctl restart ssh
+
+# Remove this script to prevent it from running again
+rm -- "\$0"
+EOF
+
+chmod +x $mount_point/first-boot.sh
+
+# Schedule the first-boot script to run at startup
+ln -s ../first-boot.sh $mount_point/etc/rc.local
+
 chmod +x $mount_point/setup.sh
 echo "Script completed successfully."
