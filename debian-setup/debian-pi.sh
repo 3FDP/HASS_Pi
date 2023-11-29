@@ -33,6 +33,13 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Step 0: Format/Clean the Device
+echo "Cleaning $device..."
+umount ${device}?* 2>/dev/null
+wipefs -a $device
+partprobe $device
+echo "Device $device cleaned successfully."
+
 # Step 1: Install the image to the device
 echo "Installing $img to $device..."
 dd if="$img" of="$device" bs=4M conv=fsync status=progress
