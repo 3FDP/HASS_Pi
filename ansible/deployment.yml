@@ -135,7 +135,7 @@
         mode: "0755"
 
     - name: Run docker-compose
-      ansible.builtin.command:
-        cmd: docker-compose up -d
-        chdir: /home/server
-      changed_when: true
+      community.docker.docker_compose:
+        project_src: /home/server
+        state: present
+        restarted: yes
