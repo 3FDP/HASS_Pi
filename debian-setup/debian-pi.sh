@@ -43,6 +43,7 @@ echo "Device $device cleaned successfully."
 # Step 1: Install the image to the device
 echo "Installing $img to $device..."
 dd if="$img" of="$device" bs=4M conv=fsync status=progress
+sync
 echo "Installation complete."
 
 # Function to find the bootable system partition
@@ -141,4 +142,5 @@ reboot
 EOF
 
 chmod +x $mount_point/setup.sh
+umount $mount_point
 echo "Script completed successfully."
