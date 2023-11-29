@@ -96,7 +96,7 @@ echo "Encrypted password: $new_root_passwd"
 
 # Step 4: Update /etc/shadow with the new root password
 echo "Updating root password in /etc/shadow..."
-sed -i "s/^root:.*/root:$new_root_passwd:17647:0:99999:7:::/" $mount_point/etc/shadow
+sed -i "s|^root:.*|root:$new_root_passwd:17647:0:99999:7:::|" $mount_point/etc/shadow
 
 # Step 5: Set hostname (if provided)
 if [ ! -z "$hostname" ]; then
