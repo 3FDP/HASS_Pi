@@ -73,8 +73,9 @@ find_system_partition() {
 # Find the bootable system partition
 partition=$(find_system_partition $device)
 if [ -z "$partition" ]; then
-    echo "Unable to find a valid system partition on $device"
-    exit 1
+    # echo "Unable to find a valid system partition on $device"
+    echo "Using second partition within $device..."
+    partition=${device}2
 fi
 
 echo "Using system partition: $partition"
