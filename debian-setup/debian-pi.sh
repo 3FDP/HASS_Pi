@@ -142,5 +142,4 @@ reboot
 EOF
 
 chmod +x $mount_point/setup.sh
-umount $mount_point
 echo "Script completed successfully."
